@@ -1,2 +1,2 @@
-# vosilov-gmail.com
+# Code samples
 Some coding examples of my own.

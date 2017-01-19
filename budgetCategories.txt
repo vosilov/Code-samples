@@ -1,0 +1,46 @@
+DAILY_LIVING
+Groceries
+Clothing
+Cleaning
+Dining/Eating Out/Coffee
+Other
+
+HEALTH
+Doctor/Dentist/Physio/Chiro
+Drug Store
+Sport Club Dues (YMCA)
+Other
+
+HOME_EXPENSES
+Rent
+Home Insurance
+Electricity
+Gas
+TV/Internet/Phone (Videotron)
+Furnishings/Appliances
+Other
+
+TRANSPORTATION
+Bus/Taxi/Train Fare
+Gas/Parking
+
+ENTERTAINMENT
+Netflix
+Music
+Movies/Theater/Museums
+Books
+Sports events
+Vacation/Travel
+
+GIFTS_and_MISCELLANIOUS
+Gifts
+LinkedIn
+
+SAVING_and_INVESTING
+TFSA
+Retirement (RRSPs, GIC)
+
+LOANS_and_OTHER_DEBTS
+Loans repayments to family
+Lending to family
+Credit Card interest

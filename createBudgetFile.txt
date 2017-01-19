@@ -1,0 +1,132 @@
+Option Explicit
+
+Function MonthDays(myMonth As Long) As Long
+    MonthDays = Day(DateSerial(Year(Date), myMonth + 1, 1) - 1)
+End Function
+
+Sub createMonthlyExpenseSheets()
+Dim i As Integer, j As Integer, numDays As Integer, lastRangeRow As Integer, lastRow As Integer, m As Long
+Dim TableName As String, month As String
+Dim ws As Worksheet, expenseRange As Range, tbl As ListObject
+Application.ScreenUpdating = False
+lastRow = Sheets("Sheet1").UsedRange.Rows.Count  'last used row in the sheet
+
+For m = 1 To 12
+    numDays = MonthDays(m)  'number of days in month
+    month = monthName(m) 'name of month
+    Worksheets.Add(After:=Sheets(Sheets.Count)).Name = month
+    Set ws = Sheets(month)
+    i = 1
+    Do While i <= lastRow 'until you reach the last row,
+        lastRangeRow = Sheets("Sheet1").Cells(i, 1).End(xlDown).Row  'last row of the first contiguous range
+        Set expenseRange = Sheets("Sheet1").Range(Sheets("Sheet1").Cells(i, 1), Sheets("Sheet1").Cells(lastRangeRow, 1))  'set a contiguous range with expense categories
+
+        TableName = expenseRange.Cells(1).Value & "_" & month  'name of the table with month in the end
+        
+        ws.ListObjects.Add(xlSrcRange, Range(ws.Cells(i, 1), ws.Cells(lastRangeRow, numDays + 2)), , xlYes).Name = TableName  'Create a table and name it
+        Set tbl = ws.ListObjects(TableName)
+        With tbl
+            .HeaderRowRange(1).Value = TableName  'Put table name in the first column of the header row
+        
+            For j = 1 To numDays
+                .HeaderRowRange(j + 1).Value = j  'Put day of month from 1 to numberOfDaysInMonth in the header row
+            Next
+        
+            .HeaderRowRange(numDays + 2).Value = "TOTAL"  'Name the last column as TOTAL
+            For j = 1 To expenseRange.Count - 1
+                .ListColumns("TOTAL").DataBodyRange(j).FormulaR1C1 = "=SUM(" & .Name & "[@[1]:[" & numDays & "]])"   'Enter formula to calculate sum of expenses for the whole month in the last column
+                .DataBodyRange(j, 1).Value = expenseRange.Cells(j + 1).Value  'Enter Expense sub category names in the first column:
+            Next
+        
+            For j = 1 To numDays + 1
+                .ListColumns(j + 1).DataBodyRange.NumberFormat = "[$$-en-CA]#,##0.00" 'Format to display dollar sign and two decimals
+            Next
+            
+            .TableStyle = "TableStyleLight10"  'Choose table style, look
+            .ShowTableStyleFirstColumn = True  'Different formatting for the first column
+            .ShowTableStyleLastColumn = True  'Different formatting for the TOTAL column
+            .ShowAutoFilterDropDown = False  'Remove the Filter Buttons from the header row
+        End With
+        With tbl.DataBodyRange
+            .Interior.Pattern = xlSolid
+            .Interior.PatternColorIndex = xlAutomatic
+            .Interior.ThemeColor = xlThemeColorAccent2
+            .Interior.TintAndShade = 0.799981688894314
+            .Interior.PatternTintAndShade = 0
+        End With
+        If lastRangeRow >= lastRow Then
+            Exit Do
+        Else
+            i = Sheets("Sheet1").Cells(i, 1).End(xlDown).End(xlDown).Row
+        End If
+    Loop
+    Cells.EntireColumn.AutoFit  'Autofit all the columns
+Next
+
+Call createSummaryExpenseSheet
+Application.ScreenUpdating = True
+End Sub
+
+
+Sub createSummaryExpenseSheet()
+Dim i As Integer, j As Long, numDays As Integer, lastRangeRow As Integer, lastRow As Integer, k As Integer
+Dim TableName As String, month As String
+Dim ws As Worksheet, expenseRange As Range, tbl As ListObject
+
+lastRow = Sheets("Sheet1").UsedRange.Rows.Count  'last used row in the sheet
+Worksheets.Add(before:=Sheets("January")).Name = "2017 Family Budget Summary"
+Set ws = Sheets("2017 Family Budget Summary")
+i = 1
+    Do While i <= lastRow 'until you reach the last row,
+        lastRangeRow = Sheets("Sheet1").Cells(i, 1).End(xlDown).Row  'last row of the first contiguous range
+        Set expenseRange = Sheets("Sheet1").Range(Sheets("Sheet1").Cells(i, 1), Sheets("Sheet1").Cells(lastRangeRow, 1))  'set a contiguous range with expense categories
+
+        TableName = expenseRange.Cells(1).Value  'name of the Expense table
+        
+        ws.ListObjects.Add(xlSrcRange, Range(ws.Cells(i + 18, 1), ws.Cells(lastRangeRow + 18, 15)), , xlYes).Name = TableName  'Create a table and name it
+        Set tbl = ws.ListObjects(TableName)
+        With tbl
+            .HeaderRowRange(1).Value = TableName  'Put table name in the first column of the header row
+        
+            For j = 1 To 12
+                .HeaderRowRange(j + 1).Value = monthName(j)  'Put day of month from 1 to numberOfDaysInMonth in the header row
+            Next
+        
+            .HeaderRowRange(14).Value = "Total"  'Name the one before last column as Total
+            .HeaderRowRange(15).Value = "Average"  'Name the last column as Average
+            For j = 1 To expenseRange.Count - 1
+                .ListColumns("Total").DataBodyRange(j).FormulaR1C1 = "=SUM(" & .Name & "[@[January]:[December]])"   'Enter formula to calculate sum of expenses for the whole year in the last column
+                .ListColumns("Average").DataBodyRange(j).FormulaR1C1 = "=AVERAGE(" & .Name & "[@[January]:[December]])"   'Enter formula to calculate average of expenses for the whole year in the last column
+                .DataBodyRange(j, 1).Value = expenseRange.Cells(j + 1).Value  'Enter Expense sub category names in the first column:
+            Next
+        
+            For j = 1 To 14
+                .ListColumns(j + 1).DataBodyRange.NumberFormat = "_-[$$-en-CA]* #,##0.00_-;-[$$-en-CA]* #,##0.00_-;_-[$$-en-CA]* ""-""??_-;_-@_-" 'Format to display dollar sign and two decimals
+            Next
+            
+            For j = 1 To 12
+                For k = 1 To expenseRange.Count - 1
+                    .ListColumns(monthName(j)).DataBodyRange(k).FormulaR1C1 = "=" & monthName(j) & "!R[-18]C[" & MonthDays(j) - j + 1 & "]"
+                Next
+            Next
+            
+            .TableStyle = "TableStyleLight10"  'Choose table style, look
+            .ShowTableStyleFirstColumn = True  'Different formatting for the first column
+            .ShowTableStyleLastColumn = True  'Different formatting for the TOTAL column
+            .ShowAutoFilterDropDown = False  'Remove the Filter Buttons from the header row
+        End With
+        With tbl.DataBodyRange
+            .Interior.Pattern = xlSolid
+            .Interior.PatternColorIndex = xlAutomatic
+            .Interior.ThemeColor = xlThemeColorAccent2
+            .Interior.TintAndShade = 0.799981688894314
+            .Interior.PatternTintAndShade = 0
+        End With
+        If lastRangeRow >= lastRow Then
+            Exit Do
+        Else
+            i = Sheets("Sheet1").Cells(i, 1).End(xlDown).End(xlDown).Row
+        End If
+    Loop
+    Cells.EntireColumn.AutoFit  'Autofit all the columns
+End Sub
